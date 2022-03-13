@@ -69,6 +69,7 @@ namespace RPGParte2
                     {
                         case 1:
 
+                            //Aqui ponemos que solo ataque en los turnos impares, por lo tanto ataca cada dos turnos
                             int revisaImpar = turno % 2;
                             if (revisaImpar != 0)
                             {
@@ -78,6 +79,7 @@ namespace RPGParte2
                             }
                             else
                             {
+                                Console.WriteLine(villano.nombre + " esta afilando su bisturi\n");
                                 villano.Atacar(heroe);
                             }
 
