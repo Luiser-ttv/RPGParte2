@@ -8,19 +8,16 @@ namespace RPGParte2
         static void Main(string[] args)
         {
             // Primero creamos los objetos que van a existir en nuestro juego
-            // En Unity se crean los GameObjects en la escena
-            Heroe heroe = new Heroe("Bender", 100, 5, 10, 50);
-            Villano villano = new Villano("Dr. Zoiberg", 100, 5, 10);
+            Heroe heroe = new Heroe("Bender", 100, 5, 5, 15);
+            Villano villano = new Villano("Dr. Zoiberg", 100, 5, 4);
 
             // Empieza el juego, preparamos todo lo necesario
-            // Esto seria el Start de Unity en una escena
             int turno = 0;
             heroe.Saludar();
             villano.Saludar();
 
             // Empieza el bucle de juego
             // Podemos llevar la cuenta de informacion de la partida, como los turnos
-            // En Unity el bucle esta representado en el evento Update
             while (heroe.puntosVida > 0 && villano.puntosVida > 0)
             {
                 // Actualizamos informacion
@@ -32,27 +29,42 @@ namespace RPGParte2
                 Console.WriteLine("¿Que accion quieres realizar?");
                 Console.WriteLine("1. Atacar");
                 Console.WriteLine("2. Defender");
-                Console.WriteLine("3. Huir");
+                Console.WriteLine("3. Descarga");
+                Console.WriteLine("4. Ionizador");
                 try
                 {
-                    // Leemos la consola
-                    string input = Console.ReadLine();
-                    int eleccion = Convert.ToInt32(input);
-                    // Procesamos la eleccion
-                    switch (eleccion)
+                    //Añadimos un if para que identifique si esta aturdido o no
+                    if (heroe.aturdido == true)
                     {
-                        case 1:
-                            heroe.Atacar(villano);
-                            break;
-                        case 2:
-                            heroe.Defender();
-                            break;
-                        case 3:
-                            heroe.AtaqueEspecial(villano);
-                            break;
+                        //En caso de que si que este aturdido se saltara el turno del heroe.
+                        Console.WriteLine(villano.nombre + " te ha lanzado un saco de tinta y no puedes hacer nada\n");
+                        heroe.aturdido = false;
+                    }
+                    //Aqui se ejecutara el switch en el que ocurrirá el turno del heroe con normalidad
+                    else
+                    {
+                        // Leemos la consola
+                        string input = Console.ReadLine();
+                        int eleccion = Convert.ToInt32(input);
+                        // Procesamos la eleccion
+                        switch (eleccion)
+                        {
+                            case 1:
+                                heroe.Atacar(villano);
+                                break;
+                            case 2:
+                                heroe.Defender();
+                                break;
+                            case 3:
+                                heroe.AtaqueEspecial(villano);
+                                break;
+                            case 4:
+                                heroe.Ionizador(villano);
+                                break;
+                        }
                     }
                     // El villano realiza su accion
-                    int accionVillano = new Random().Next(1, 3); // Devuelve un numero entre [1,3)
+                    int accionVillano = new Random().Next(1, 4); // Devuelve un numero entre [1,3)
                     switch (accionVillano)
                     {
                         case 1:
@@ -73,17 +85,21 @@ namespace RPGParte2
                         case 2:
                             villano.Defender();
                             break;
+                        case 3:
+                            villano.SacoDeTinta(heroe);
+                            break;
                     }
                     // Mostramos el estado de los personajes
                     // Esto representa parte del feedback del juego
-                    Console.WriteLine("Heroe: " + heroe.puntosVida + " PV");
-                    Console.WriteLine("Villano: " + villano.puntosVida + " PV\n");
+                    Console.WriteLine( heroe.nombre + ": " + heroe.puntosVida + " PV");
+                    Console.WriteLine( villano.nombre + ": " + villano.puntosVida + " PV\n");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("El heroe no ha escogido ninguna opcion\n");
+                    //Esta parte se ejecuta en caso de que el usuario no introduzca bien el valor.
+                    Console.WriteLine(heroe.nombre + " no ha escogido ninguna opcion\n");
                     Thread.Sleep(2000);
-                    Console.WriteLine("El villano aprovecha la ocasion\n");
+                    Console.WriteLine(villano.nombre + " aprovecha la ocasion\n");
                     Thread.Sleep(2000);
                     villano.Atacar(heroe);
                 }
@@ -92,12 +108,12 @@ namespace RPGParte2
             if (villano.puntosVida <= 0)
             {
                 // El ganador es el heroe
-                Console.WriteLine("El ganador es el heroe");
+                Console.WriteLine("El ganador es " + heroe.nombre);
             }
             else if (heroe.puntosVida <= 0)
             {
                 // Sino el ganador es el villano
-                Console.WriteLine("El ganador es el villano");
+                Console.WriteLine("El ganador es " + villano.nombre);
             }
             // Aqui acaba la ejecucion
             // En Unity se destruyen los objetos y cargariamos otra escena o cerramos el juego
@@ -112,6 +128,7 @@ namespace RPGParte2
         public int puntosAtaque;
         public int puntosDefensa;
         public bool defendiendo;
+        public bool aturdido = false;
 
         public Personaje(string nombre, int puntosVida, int puntosAtaque, int puntosDefensa)
         {
@@ -126,28 +143,47 @@ namespace RPGParte2
         {
             // Se realiza el saludo por consola
             Console.WriteLine("Hola, yo soy " + this.nombre);
+            Thread.Sleep(2000);
         }
 
         public void Atacar(Personaje oponente)
         {
+            //Escribe en pantalla el ataque y llama al oponente para que reciba la funcion de RecibirAtaque
             Console.WriteLine(nombre + " ataca con fuerza\n");
             oponente.RecibirAtaque(puntosAtaque);
         }
 
         public void RecibirAtaque(int puntosAtaque)
         {
+            //Declaramos las variables para guardar la vida restante, la probabiliad de critico y el valor añadido del golpe critico
             int vidaRestante;
+            int probCritico = new Random().Next(0, 5);
+            int golpeCritico;
+
+            //Cuando la el valor sea 1 ejecutara el ataque critico, el valor puede ser entre 1 y 4
+            if (probCritico == 1)
+            {
+                //En el caso de que se produzca el critico se sumara 5 de daño al ataque del heroe
+                Console.WriteLine(nombre + " ha recibido un critico ");
+                golpeCritico = 5;
+            }
+            else
+            {
+                //En caso de que no sea critico se pone el valor del daño extra en 0
+                golpeCritico = 0;
+            }
+
             if (defendiendo == true)
             {
-                vidaRestante = puntosVida - puntosAtaque + puntosDefensa;
+                //En caso de que se este defendiendo se le restara al daño del atacante la defensa del atacado
+                vidaRestante = puntosVida - puntosAtaque + puntosDefensa - golpeCritico;
                 puntosVida = vidaRestante;
-                Console.WriteLine(nombre + " se ha defendido, le quedan " + puntosVida + "PV\n");
-                Thread.Sleep(2000);
                 defendiendo = false;
             }
             else
             {
-                vidaRestante = puntosVida - puntosAtaque;
+                //En caso de que no se defienda el daño recibido será el valor de los puntos de ataque y el del critico.
+                vidaRestante = puntosVida - puntosAtaque - golpeCritico;
                 puntosVida = vidaRestante;
                 Console.WriteLine("A " + nombre + " le quedan " + puntosVida + "PV\n");
                 Thread.Sleep(2000);
@@ -157,6 +193,7 @@ namespace RPGParte2
 
         public void Defender()
         {
+            //Si eligen la opción de defender, se cambia el booleano a true para el if de recibir ataque
             defendiendo = true;
             Console.WriteLine(nombre + " ha elegido usar a Fry de escudo\n" );
             Thread.Sleep(2000);
@@ -165,22 +202,59 @@ namespace RPGParte2
 
     public class Heroe : Personaje
     {
-        public int puntosMagia; // Guarda cuantos puntos de magia tiene
+        public int puntosEnergia; // Guarda cuantos puntos de enegia tiene
 
-        public Heroe(string nombre, int puntosVida, int puntosAtaque, int puntosDefensa, int puntosMagia) : base(nombre, puntosVida, puntosAtaque, puntosDefensa)
+        public Heroe(string nombre, int puntosVida, int puntosAtaque, int puntosDefensa, int puntosEnergia) : base(nombre, puntosVida, puntosAtaque, puntosDefensa)
         {
-            this.puntosMagia = puntosMagia; // Hay que asignar los puntos de magia
+            this.puntosEnergia = puntosEnergia; // Hay que asignar los puntos de energia
         }
 
         public void AtaqueEspecial(Personaje oponente)
         {
+            //Declaramos la energia restante, cada vez que se ejecute el ataque especial, restara energia
             Console.WriteLine(nombre + " ha lanzado una descarga\n");
             Thread.Sleep(2000);
-            int magiaRestante = puntosMagia - 5;
-            puntosMagia = magiaRestante;
+            int energiaRestante = puntosEnergia - 5;
+            puntosEnergia = energiaRestante;
 
-            int ataqueMagia = puntosAtaque * 2;
-            oponente.RecibirAtaque(ataqueMagia);
+            //En caso de que le quede suficiente energia, realizara el ataque
+            if (puntosEnergia >= 5)
+            {
+                int ataqueEnergia = puntosAtaque * 5;
+                oponente.RecibirAtaque(ataqueEnergia);
+            }
+            else
+            {
+                //Este será el caso en el que no le quede más energia
+                Console.WriteLine("No te quedan puntos de energia\n");
+                Thread.Sleep(2000);
+                Console.WriteLine("Pierdes el turno\n");
+                Thread.Sleep(2000);
+            }
+            
+        }
+        public void Ionizador(Personaje oponente)
+        {
+            //Aqui elegiremos si sale el caso del ataque de iones fuerte o debil
+            int randomIones = new Random().Next(1, 3);
+            switch (randomIones)
+            {
+                //Aqui realiza un ataque en el que suma la defensa del villano al ataque base
+                case 1:
+                    Console.WriteLine(nombre + " usa la defensa de " + oponente.nombre +" en su contra\n");
+                    Thread.Sleep(2000);
+                    int ataqueIones = puntosAtaque + oponente.puntosDefensa;
+                    oponente.RecibirAtaque(ataqueIones);
+
+                    break;
+                //En este caso es la opcion en la que falla y hace la mitad de daño
+                case 2:
+                    Console.WriteLine(nombre + " lanza un ataque de iones, pero falla\n");
+                    Thread.Sleep(2000);
+                    int ataqueIonesNormal = puntosAtaque/2;
+                    oponente.RecibirAtaque(ataqueIonesNormal);
+                    break;
+            }
         }
     }
 
@@ -195,10 +269,18 @@ namespace RPGParte2
 
         public void AtaqueCargado(Personaje oponente)
         {
+            //Aqui tenemos el ataque cargado que multiplica por 3 el daño base del villano, pero tendrá que esperar 1 turno entre cada ataque para volver a realizarlo
             Console.WriteLine(nombre + " ha lanzado un golpe de bisturi\n");
             Thread.Sleep(2000);
             int ataqueCarga = puntosAtaque * 3;
             oponente.RecibirAtaque(ataqueCarga);
+        }
+        public void SacoDeTinta(Personaje oponente)
+        {
+            //Aqui pondra el booleano de aturdido en true
+            oponente.aturdido = true;
+            Thread.Sleep(2000);
+            
         }
     }
 }
