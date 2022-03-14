@@ -13,6 +13,7 @@ namespace RPGParte2
 
             // Empieza el juego, preparamos todo lo necesario
             int turno = 0;
+            int revisaCarga = 0;
             heroe.Saludar();
             villano.Saludar();
 
@@ -64,23 +65,23 @@ namespace RPGParte2
                         }
                     }
                     // El villano realiza su accion
-                    int accionVillano = new Random().Next(1, 4); // Devuelve un numero entre [1,3)
+                    int accionVillano = new Random().Next(1, 5); // Devuelve un numero entre [1,4]
                     switch (accionVillano)
                     {
                         case 1:
 
-                            //Aqui ponemos que solo ataque en los turnos impares, por lo tanto ataca cada dos turnos
-                            int revisaImpar = turno % 2;
-                            if (revisaImpar != 0)
-                            {
+                            //Aqui ponemos que solo ataque cada dos turnos, uno de carga y el segundo de ataque
 
+                            if (revisaCarga == 1)
+                            {
                                 villano.ataqueCargado = true;
                                 villano.AtaqueCargado(heroe);
+                                revisaCarga = 0;
                             }
                             else
                             {
                                 Console.WriteLine(villano.nombre + " esta afilando su bisturi\n");
-                                villano.Atacar(heroe);
+                                revisaCarga = revisaCarga + 1;
                             }
 
                             break;
@@ -89,6 +90,9 @@ namespace RPGParte2
                             break;
                         case 3:
                             villano.SacoDeTinta(heroe);
+                            break;
+                        case 4:
+                            villano.Atacar(heroe);
                             break;
                     }
                     // Mostramos el estado de los personajes
